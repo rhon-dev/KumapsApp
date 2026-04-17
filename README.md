@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Kumpas - Filipino Sign Language Learning App
 
 ## Overview
@@ -410,3 +411,6 @@ For issues, feature requests, or feedback:
 ---
 
 **Made with ❤️ for the FSL Community**
+=======
+# KumapsApp
+>>>>>>> 7af1a0d47e5aaf19d0b0da0dd20113ac9975c1f3

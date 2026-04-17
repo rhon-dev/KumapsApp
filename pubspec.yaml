@@ -1,0 +1,31 @@
+name: kumpas
+description: "Filipino Sign Language Learning App with Real-time AI Feedback"
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.0
+  
+  # Camera & Media
+  camera: ^0.10.5
+  
+  # UI & Design
+  google_fonts: ^6.1.0
+  
+  # Utilities
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

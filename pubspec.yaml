@@ -17,6 +17,13 @@ dependencies:
   camera: ^0.10.5
   image: ^4.0.0
   
+  # ML Kit for Hand Detection
+  google_mlkit_hand_pose_detection: ^0.1.0
+  google_mlkit_commons: ^0.5.0
+  
+  # TFLite Model Inference
+  tflite_flutter: ^0.10.0
+  
   # UI & Design
   google_fonts: ^6.1.0
   

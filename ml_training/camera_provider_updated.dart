@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_hand_pose_detection/google_mlkit_hand_pose_detection.dart';
+import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:kumpas/models/learning_models.dart';
 import 'dart:convert';
@@ -11,7 +12,7 @@ class CameraProviderWithGestures extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isCameraRunning = false;
   List<PoseLandmark> _currentLandmarks = [];
-  List<AIFeedback> _activeFeedbacks = [];
+  final List<AIFeedback> _activeFeedbacks = [];
 
   // Gesture recognition
   late HandPoseDetector _handDetector;
@@ -22,9 +23,9 @@ class CameraProviderWithGestures extends ChangeNotifier {
   double _recognitionConfidence = 0.0;
   List<List<double>> _landmarkSequence = [];
 
-  static const int SEQUENCE_LENGTH = 30;
-  static const int NUM_LANDMARKS = 21;
-  static const int COORDS_PER_LANDMARK = 3;
+  static const int sequenceLength = 30;
+  static const int numLandmarks = 21;
+  static const int coordsPerLandmark = 3;
 
   // Getters
   CameraController? get cameraController => _cameraController;
@@ -35,9 +36,12 @@ class CameraProviderWithGestures extends ChangeNotifier {
   String get recognizedSign => _recognizedSign;
   double get recognitionConfidence => _recognitionConfidence;
 
-  /// Initialize camera and AI models
-  Future<void> initializeCamera(CameraDescription cameraDescription) async {
+  /// Initialize camera and AI models with context
+  Future<void> initializeCamera(
+      CameraDescription cameraDescription, BuildContext context) async {
     try {
+      setContext(context);
+
       _cameraController = CameraController(
         cameraDescription,
         ResolutionPreset.high,
@@ -48,22 +52,8 @@ class CameraProviderWithGestures extends ChangeNotifier {
       await _cameraController!.initialize();
 
       // Initialize hand gesture recognition
-      await _initializeGestureRecognition();
-
-      _isInitialized = true;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error initializing camera: $e');
-      _isInitialized = false;
-      notifyListeners();
-    }
-  }
-
-  /// Initialize hand detection and TFLite model
-  Future<void> _initializeGestureRecognition() async {
-    try {
-      // Initialize hand pose detector
-      _handDetector = HandPoseDetector();
+      // ignore: use_build_context_synchronously
+      _handDetector = HandPoseDetector(options: options);
 
       // Load TFLite model
       _modelInterpreter = await Interpreter.fromAsset(
@@ -93,7 +83,7 @@ class CameraProviderWithGestures extends ChangeNotifier {
     try {
       await _cameraController!.startImageStream(_processFrame);
       _isCameraRunning = true;
-      _landmarkSequence = [];
+      _landmarkSequence.clear();
       notifyListeners();
     } catch (e) {
       debugPrint('Error starting camera preview: $e');
@@ -123,8 +113,18 @@ class CameraProviderWithGestures extends ChangeNotifier {
     if (!_isCameraRunning) return;
 
     try {
-      // Detect hand landmarks
-      final handPoses = await _handDetector.processImage(image);
+      // Detect hand landmarks using ML Kit
+      final inputImage = InputImage.fromBytes(
+        bytes: image.planes[0].bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: InputImageRotation.rotation0deg,
+          format: InputImageFormat.nv21,
+          bytesPerRow: image.planes[0].bytesPerRow,
+        ),
+      );
+
+      final handPoses = await _handDetector.processImage(inputImage);
 
       if (handPoses.isNotEmpty) {
         final primaryHand = handPoses[0];
@@ -133,8 +133,8 @@ class CameraProviderWithGestures extends ChangeNotifier {
         final frameLandmarks = _extractLandmarkFeatures(primaryHand.landmarks);
         _landmarkSequence.add(frameLandmarks);
 
-        // Keep only last SEQUENCE_LENGTH frames
-        if (_landmarkSequence.length > SEQUENCE_LENGTH) {
+        // Keep only last sequenceLength frames
+        if (_landmarkSequence.length > sequenceLength) {
           _landmarkSequence.removeAt(0);
         }
 
@@ -142,7 +142,7 @@ class CameraProviderWithGestures extends ChangeNotifier {
         _updatePoseLandmarks(primaryHand.landmarks);
 
         // Run gesture recognition if we have enough frames
-        if (_landmarkSequence.length == SEQUENCE_LENGTH) {
+        if (_landmarkSequence.length == sequenceLength) {
           await _runGestureRecognition();
         }
 
@@ -184,36 +184,40 @@ class CameraProviderWithGestures extends ChangeNotifier {
         visibility: 0.95,
       ),
       // Add more landmarks as needed for visualization
-      ...handLandmarks
-          .asMap()
-          .entries
-          .map((e) => PoseLandmark(
-                name: 'hand_landmark_${e.key}',
-                x: e.value.x,
-                y: e.value.y,
-                z: e.value.z,
-                visibility: 0.9,
-              ))
-          .toList(),
+      ...handLandmarks.asMap().entries.map((e) => PoseLandmark(
+            name: 'hand_landmark_${e.key}',
+            x: e.value.x,
+            y: e.value.y,
+            z: e.value.z,
+            visibility: 0.9,
+          )),
     ];
   }
 
   /// Run TFLite inference on landmark sequence
   Future<void> _runGestureRecognition() async {
     try {
-      // Prepare input: (1, SEQUENCE_LENGTH, 63)
-      // 1 = batch size, SEQUENCE_LENGTH = frames, 63 = 21 landmarks × 3 coords
-      final input = _landmarkSequence.reshape([1, SEQUENCE_LENGTH, 21 * 3]);
+      // Flatten landmark sequence into proper input format
+      // Input shape: (1, sequenceLength, 63) where 63 = 21 landmarks × 3 coords
+      final flatInput = <double>[];
+      for (final frame in _landmarkSequence) {
+        flatInput.addAll(frame);
+      }
 
-      // Prepare output: (1, 5) for 5 signs
-      final output = List<double>(5).reshape([1, 5]);
+      // Reshape to (1, sequenceLength, 63)
+      final input = [flatInput];
+
+      // Prepare output array for predictions (assuming 5 gesture classes)
+      final output = <List<double>>[];
 
       // Run inference
       _modelInterpreter.run(input, output);
 
       // Process results
-      final predictions = output[0];
-      _processGesturePredictions(predictions);
+      if (output.isNotEmpty) {
+        final predictions = output[0];
+        _processGesturePredictions(predictions);
+      }
     } catch (e) {
       debugPrint('Error running gesture recognition: $e');
     }
@@ -304,19 +308,12 @@ class CameraProviderWithGestures extends ChangeNotifier {
   }
 }
 
-/// Extension to reshape lists like numpy
-extension ListReshape on List {
-  List reshape(List<int> shape) {
-    if (shape.length == 1) return this;
-
-    final size = shape[0];
-    final subShape = shape.sublist(1);
-    final subSize = subShape.reduce((a, b) => a * b);
-
-    List result = [];
-    for (int i = 0; i < size; i++) {
-      result.add(sublist(i * subSize, (i + 1) * subSize).reshape(subShape));
-    }
-    return result;
+/// Utility functions for tensor operations
+List<List<List<double>>> reshape3D(
+    List<List<double>> sequence, int batchSize, int timeSteps, int features) {
+  final result = <List<List<double>>>[];
+  for (int b = 0; b < batchSize; b++) {
+    result.add(sequence);
   }
+  return result;
 }

@@ -1,0 +1,23 @@
+# ============================================================
+# KUMAPS ML Training & Flask Backend Dependencies
+# Compatible with Python 3.10, 3.11, 3.12 (NOT 3.14)
+# Install with: pip install -r requirements.txt
+# ============================================================
+
+# Python version requirement
+# Requires: python>=3.10
+
+# Core ML & Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.4.0
+
+# Computer Vision & Hand Detection
+opencv-python>=4.9.0
+
+# Web Framework & API
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+
+# Utilities
+# (Add more as needed for future features)

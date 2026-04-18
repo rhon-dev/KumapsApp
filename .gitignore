@@ -1,45 +1,212 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+# ============================================================
+# KUMAPS - HAND GESTURE RECOGNITION APP
+# .gitignore - Production Ready for Cross-Platform Development
+# ============================================================
+# This file ensures proper version control:
+# ✅ INCLUDES: All code, models, requirements, configs
+# ❌ EXCLUDES: Build artifacts, virtual envs, caches, OS files
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# ============================================================
+# Python Development (ml_training/)
+# ============================================================
+# Virtual environments (user creates locally)
+venv/
+env/
+.venv/
+.env
+.env.local
+*.egg-info/
+dist/
+build/
+*.egg
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Python runtime
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
+# Python testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Flask instance folder (if created)
+instance/
+
+# ============================================================
+# Flutter/Dart Development
+# ============================================================
+# Flutter packages
+.packages
+.flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
+.pubspec.lock.bak
+
+# Flutter build outputs
 /build/
-/coverage/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+/ios/Flutter/Flutter.framework/
+/macos/Flutter/Flutter-Debug.xcconfig
+/macos/Flutter/Flutter-Release.xcconfig
+*.ipa
 
-# Symbolication related
-app.*.symbols
+# Dart analysis
+.dart_tool/
+analysis_options.bak
+coverage/
 
-# Obfuscation related
-app.*.map.json
+# Generated files
+.g.dart
+*.config.dart
+gen_localizations.stamp
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# ============================================================
+# IDEs & Editors
+# ============================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE config files (specific to user setups)
+.vscode/launch.json
+.vscode/extensions.json
+workspace.xml
+
+# ============================================================
+# OS-Specific Files
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.lnk
+
+# ============================================================
+# Android Development
+# ============================================================
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+/android/.gradle/
+/android/build/
+/android/.idea/
+/android/*.iml
+/android/*.ipr
+/android/*.iws
+android/local.properties
+local.properties
+
+# Android Studio
+*.apk
+*.ap_
+*.dex
+*.class
+*.jar
+*.aar
+
+# ============================================================
+# iOS Development
+# ============================================================
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+ios/Flutter/GeneratedPluginRegistrant.swift
+ios/Runner/GeneratedPluginRegistrant.swift
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/flutter_export_environment.sh
+/ios/*.pbxproj
+/ios/Flutter/GeneratedPluginRegistrant.m
+.symlinks/
+Flutter/Flutter.framework
+Flutter/Flutter.podspec
+
+# ============================================================
+# macOS Development
+# ============================================================
+/macos/Pods/
+/macos/Runner/GeneratedPluginRegistrant.swift
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/macos/.symlinks/
+/macos/Flutter/flutter_export_environment.sh
+/macos/Flutter/Flutter.podspec
+/macos/build/
+
+# Xcode
+*.xcworkspace
+*.xcodeproj
+*.xcframework
+*.pbxproj
+DerivedData/
+.xcode.env
+.xcode.env.bak
+
+# ============================================================
+# Build & Distribution
+# ============================================================
+*.o
+*.a
+*.so
+*.dylib
+CMakeFiles/
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+*.make
+
+# ============================================================
+# Runtime & Temporary Files
+# ============================================================
+*.log
+*.swp
+*.swo
+*~
+.tmp/
+tmp/
+temp/
+
+# ============================================================
+# DO NOT IGNORE - THESE ARE NEEDED IN REPO
+# ============================================================
+# ✅ KEEP: Model files (required for gesture recognition)
+# ✅ KEEP: requirements.txt (Python dependencies)
+# ✅ KEEP: pubspec.yaml & pubspec.lock (Flutter dependencies)
+# ✅ KEEP: All documentation (README, SETUP, etc.)
+# ✅ KEEP: All source code (lib/, ml_training/*)
+# ✅ KEEP: Configuration files (analysis_options.yaml, etc.)
+
+# These should NEVER be in gitignore:
+!.gitkeep
+!ml_training/models/gesture_model.pkl
+!ml_training/models/sign_mapping.json
+!ml_training/requirements.txt
+!pubspec.yaml
+!pubspec.lock
+!README.md
+!SETUP_FOR_GROUPMATES.md
+!TROUBLESHOOTING.md
+!QUICK_REFERENCE.md
+!FILE_STRUCTURE.md
+!NETWORK_CONFIGURATION_GUIDE.md

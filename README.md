@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Kumpas - Filipino Sign Language Learning App
 
 ## Overview
@@ -9,11 +8,60 @@
 
 - **🎓 Interactive Learning**: Structured lessons from beginner to advanced levels
 - **📹 Real-time Practice Mode**: Full-screen camera integration with responsive UI
-- **🎯 AI-Powered Feedback**: Placeholder system for MediaPipe pose detection and corrective feedback
+- **🎯 AI-Powered Hand Gesture Recognition**: Real-time recognition with confidence scoring
 - **🔄 Live Translation**: Bidirectional translation (Sign ↔ Text)
 - **📚 Comprehensive Dictionary**: Browse and search Filipino signs
 - **📊 Progress Tracking**: Statistics, streaks, and XP systems
 - **♿ Accessibility-First Design**: High-contrast UI, clear typography, FSL-community-appropriate colors
+
+---
+
+## 🤖 Hand Gesture Recognition
+
+**Kumpas** now includes real-time hand gesture recognition powered by a Flask backend and trained machine learning model!
+
+### How It Works
+
+1. **Flutter Mobile App**: Captures hand video via device camera
+2. **MediaPipe Integration**: Extracts 21 hand joint landmarks
+3. **Flask Backend API**: Runs gesture recognition model on port 5001
+4. **Real-time Feedback**: Displays recognized gesture + confidence percentage
+
+### Supported Gestures
+
+The app recognizes the following hand gestures:
+- ✋ **HELLO** - Open hand waving
+- 👍 **YES** - Thumbs up
+- ☝️ **ONE** - Single finger pointing
+- ✌️ **TWO** - Two fingers (peace sign)
+- ✊ **TEN** - Closed fist
+
+### Quick Start
+
+**⚠️ NEW USERS: Start here!**
+
+1. **Read [SETUP_FOR_GROUPMATES.md](SETUP_FOR_GROUPMATES.md)** - Complete step-by-step guide for any OS
+2. Run Flask backend (Terminal 1): `python3 flask_api.py`
+3. Run Flutter app (Terminal 2): `flutter run`
+4. Open "Translate" tab on phone → see gesture recognition in action!
+
+### Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [SETUP_FOR_GROUPMATES.md](SETUP_FOR_GROUPMATES.md) | **START HERE** - Step-by-step setup for Windows/Mac/Linux |
+| [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Copy-paste commands for your OS |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues & solutions |
+| [NETWORK_CONFIGURATION_GUIDE.md](NETWORK_CONFIGURATION_GUIDE.md) | Understand Flask backend & networking |
+| [FILE_STRUCTURE.md](FILE_STRUCTURE.md) | Explanation of repo layout |
+| [PRE_LAUNCH_CHECKLIST.md](PRE_LAUNCH_CHECKLIST.md) | For project leads: verify everything works |
+
+### Tech Stack
+
+- **Frontend**: Flutter + Dart
+- **Backend**: Flask (Python) with scikit-learn ML model
+- **Hand Detection**: MediaPipe
+- **Communication**: REST API on localhost:5001
 
 ---
 
@@ -411,6 +459,3 @@ For issues, feature requests, or feedback:
 ---
 
 **Made with ❤️ for the FSL Community**
-=======
-# KumapsApp
->>>>>>> 7af1a0d47e5aaf19d0b0da0dd20113ac9975c1f3

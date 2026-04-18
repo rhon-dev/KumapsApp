@@ -15,12 +15,14 @@ dependencies:
   
   # Camera & Media
   camera: ^0.10.5
+  image: ^4.0.0
   
   # UI & Design
   google_fonts: ^6.1.0
   
   # Utilities
   equatable: ^2.0.5
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

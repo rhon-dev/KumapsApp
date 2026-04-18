@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:kumpas/presentation/providers/camera_provider.dart';
 import 'package:kumpas/presentation/widgets/camera_feedback_overlay.dart';
+import 'package:kumpas/presentation/screens/gesture_recognition_screen.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class TranslateScreen extends StatefulWidget {
@@ -114,6 +115,22 @@ class _TranslateScreenState extends State<TranslateScreen>
                 color: AppColors.primary,
                 onTap: () async {
                   await _initializeAndStartTranslate(cameraProvider);
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildTranslationModeCard(
+                context: context,
+                title: 'Gesture Recognition',
+                description:
+                    'Real-time hand gesture recognition with AI feedback',
+                icon: Icons.pan_tool_outlined,
+                color: const Color(0xFF9C27B0),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const GestureRecognitionScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 16),

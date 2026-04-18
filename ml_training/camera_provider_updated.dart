@@ -53,6 +53,22 @@ class CameraProviderWithGestures extends ChangeNotifier {
 
       // Initialize hand gesture recognition
       // ignore: use_build_context_synchronously
+      await _initializeGestureRecognition();
+
+      _isInitialized = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error initializing camera: $e');
+      _isInitialized = false;
+      notifyListeners();
+    }
+  }
+
+  /// Initialize hand detection and TFLite model
+  Future<void> _initializeGestureRecognition() async {
+    try {
+      // Initialize hand pose detector with proper options
+      final options = HandPoseDetectorOptions();
       _handDetector = HandPoseDetector(options: options);
 
       // Load TFLite model

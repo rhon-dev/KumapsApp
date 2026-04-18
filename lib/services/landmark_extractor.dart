@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -99,7 +98,7 @@ class LandmarkExtractor {
 
       return features;
     } catch (e) {
-      print('Error extracting landmarks: $e');
+      debugPrint('Error extracting landmarks: $e');
       return [];
     }
   }
@@ -162,7 +161,7 @@ class LandmarkExtractor {
 
       return null;
     } catch (e) {
-      print('Error converting camera image: $e');
+      debugPrint('Error converting camera image: $e');
       return null;
     }
   }
@@ -337,14 +336,12 @@ class LandmarkExtractor {
     final spread = ((maxX - minX) + (maxY - minY)) / 2;
 
     // Feature 3: Hand centroid (used for motion tracking)
-    double centroidX = 0, centroidY = 0;
+    double centroidX = 0;
     for (final joint in joints) {
       centroidX += joint.position.dx;
-      centroidY += joint.position.dy;
     }
     if (joints.isNotEmpty) {
       centroidX /= joints.length;
-      centroidY /= joints.length;
     }
 
     return [avgConfidence, spread, centroidX];

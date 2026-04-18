@@ -5,7 +5,7 @@ import 'package:kumpas/presentation/providers/app_state_provider.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

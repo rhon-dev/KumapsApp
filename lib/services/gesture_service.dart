@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class GestureService {
@@ -18,7 +19,7 @@ class GestureService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Health check failed: $e');
+      debugPrint('Health check failed: $e');
       return false;
     }
   }
@@ -36,7 +37,7 @@ class GestureService {
         throw Exception('Failed to get API info: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting API info: $e');
+      debugPrint('Error getting API info: $e');
       rethrow;
     }
   }
@@ -75,7 +76,7 @@ class GestureService {
             'Prediction failed: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Error predicting gesture: $e');
+      debugPrint('Error predicting gesture: $e');
       rethrow;
     }
   }

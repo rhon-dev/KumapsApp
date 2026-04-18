@@ -4,11 +4,10 @@ import 'package:camera/camera.dart';
 import 'package:kumpas/presentation/providers/enhanced_camera_provider.dart';
 import 'package:kumpas/presentation/widgets/hand_joint_painter.dart';
 import 'package:kumpas/presentation/widgets/gesture_result_display.dart';
-import 'package:kumpas/theme/app_theme.dart';
 
 /// Main gesture recognition camera screen
 class GestureRecognitionScreen extends StatefulWidget {
-  const GestureRecognitionScreen({Key? key}) : super(key: key);
+  const GestureRecognitionScreen({super.key});
 
   @override
   State<GestureRecognitionScreen> createState() =>

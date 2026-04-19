@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class DictionaryScreen extends StatefulWidget {
-  const DictionaryScreen({Key? key}) : super(key: key);
+  const DictionaryScreen({super.key});
 
   @override
   State<DictionaryScreen> createState() => _DictionaryScreenState();

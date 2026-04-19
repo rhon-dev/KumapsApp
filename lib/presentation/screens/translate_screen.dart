@@ -7,7 +7,7 @@ import 'package:kumpas/presentation/screens/gesture_recognition_screen.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class TranslateScreen extends StatefulWidget {
-  const TranslateScreen({Key? key}) : super(key: key);
+  const TranslateScreen({super.key});
 
   @override
   State<TranslateScreen> createState() => _TranslateScreenState();

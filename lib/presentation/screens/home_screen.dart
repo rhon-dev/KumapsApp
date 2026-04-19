@@ -323,7 +323,7 @@ class HomeScreen extends StatelessWidget {
                 style: AppTypography.titleMedium(context),
               ),
               Text(
-                '${currentLesson.difficulty}',
+                currentLesson.difficulty,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

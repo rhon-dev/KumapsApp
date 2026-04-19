@@ -8,7 +8,7 @@ import 'package:kumpas/presentation/widgets/camera_feedback_overlay.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class LearnScreen extends StatefulWidget {
-  const LearnScreen({Key? key}) : super(key: key);
+  const LearnScreen({super.key});
 
   @override
   State<LearnScreen> createState() => _LearnScreenState();

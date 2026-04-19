@@ -9,7 +9,7 @@ import 'package:kumpas/presentation/screens/profile_screen.dart';
 import 'package:kumpas/theme/app_theme.dart';
 
 class MainAppShell extends StatefulWidget {
-  const MainAppShell({Key? key}) : super(key: key);
+  const MainAppShell({super.key});
 
   @override
   State<MainAppShell> createState() => _MainAppShellState();
@@ -47,7 +47,8 @@ class _MainAppShellState extends State<MainAppShell> {
     ];
   }
 
-  Widget _buildBottomNavigation(BuildContext context, AppStateProvider appState) {
+  Widget _buildBottomNavigation(
+      BuildContext context, AppStateProvider appState) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [

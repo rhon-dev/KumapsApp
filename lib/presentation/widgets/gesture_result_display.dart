@@ -44,12 +44,12 @@ class GestureResultDisplay extends StatefulWidget {
   final VoidCallback onDismiss;
 
   const GestureResultDisplay({
-    Key? key,
+    super.key,
     this.result,
     this.isProcessing = false,
     this.errorMessage,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   State<GestureResultDisplay> createState() => _GestureResultDisplayState();

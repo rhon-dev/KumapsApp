@@ -179,13 +179,13 @@ class HandJointOverlay extends StatelessWidget {
   final bool showLabels;
 
   const HandJointOverlay({
-    Key? key,
+    super.key,
     required this.skeleton,
     this.jointColor = Colors.blue,
     this.lineColor = Colors.white,
     this.jointRadius = 6.0,
     this.showLabels = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

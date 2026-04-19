@@ -11,11 +11,11 @@ class CameraFeedbackOverlay extends StatelessWidget {
   final bool showFeedback;
 
   const CameraFeedbackOverlay({
-    Key? key,
+    super.key,
     required this.frameSize,
     this.showLandmarks = true,
     this.showFeedback = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -240,9 +240,9 @@ class FeedbackBanner extends StatefulWidget {
   final AIFeedback feedback;
 
   const FeedbackBanner({
-    Key? key,
+    super.key,
     required this.feedback,
-  }) : super(key: key);
+  });
 
   @override
   State<FeedbackBanner> createState() => _FeedbackBannerState();

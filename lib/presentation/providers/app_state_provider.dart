@@ -6,7 +6,7 @@ class AppStateProvider extends ChangeNotifier {
   int _currentTabIndex = 0;
   CameraMode _cameraMode = CameraMode.instruction;
   PracticeMode _practiceMode = PracticeMode.freeform;
-  
+
   // Dummy data
   UserProgress? _userProgress;
   List<LearningContent> _currentLessons = [];
@@ -52,7 +52,7 @@ class AppStateProvider extends ChangeNotifier {
     );
 
     _currentLessons = [
-      LearningContent(
+      const LearningContent(
         id: '1',
         title: 'Basic Greetings',
         description: 'Learn common FSL greetings and introductions',
@@ -64,7 +64,7 @@ class AppStateProvider extends ChangeNotifier {
         isCompleted: true,
         progress: 100,
       ),
-      LearningContent(
+      const LearningContent(
         id: '2',
         title: 'Numbers 1-10',
         description: 'Master numbers from 1 to 10 in FSL',
@@ -77,7 +77,7 @@ class AppStateProvider extends ChangeNotifier {
         progress: 60,
       ),
     ];
-    
+
     notifyListeners();
   }
 }

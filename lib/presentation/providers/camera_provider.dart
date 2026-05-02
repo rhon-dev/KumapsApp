@@ -73,10 +73,10 @@ class CameraProvider extends ChangeNotifier {
     // 1. Extract pose landmarks
     // 2. Compare with reference sign
     // 3. Generate real-time feedback
-    
+
     // Placeholder: Update landmarks
     _updatePlaceholderLandmarks();
-    
+
     // Placeholder: Generate feedback
     _generatePlaceholderFeedback();
   }
@@ -87,10 +87,13 @@ class CameraProvider extends ChangeNotifier {
     // For now, generating dummy data for visualization
     _currentLandmarks = [
       const PoseLandmark(name: 'nose', x: 0.5, y: 0.3, visibility: 0.95),
-      const PoseLandmark(name: 'left_shoulder', x: 0.35, y: 0.5, visibility: 0.9),
-      const PoseLandmark(name: 'right_shoulder', x: 0.65, y: 0.5, visibility: 0.9),
+      const PoseLandmark(
+          name: 'left_shoulder', x: 0.35, y: 0.5, visibility: 0.9),
+      const PoseLandmark(
+          name: 'right_shoulder', x: 0.65, y: 0.5, visibility: 0.9),
       const PoseLandmark(name: 'left_elbow', x: 0.25, y: 0.6, visibility: 0.85),
-      const PoseLandmark(name: 'right_elbow', x: 0.75, y: 0.6, visibility: 0.85),
+      const PoseLandmark(
+          name: 'right_elbow', x: 0.75, y: 0.6, visibility: 0.85),
       const PoseLandmark(name: 'left_wrist', x: 0.15, y: 0.7, visibility: 0.8),
       const PoseLandmark(name: 'right_wrist', x: 0.85, y: 0.7, visibility: 0.8),
     ];
@@ -105,7 +108,7 @@ class CameraProvider extends ChangeNotifier {
         type: 'correction',
         message: 'Raise your right shoulder slightly',
         confidence: 0.85,
-        affectedJointIds: ['right_shoulder'],
+        affectedJointIds: const ['right_shoulder'],
         timestamp: DateTime.now().millisecondsSinceEpoch,
       ),
     ];
@@ -122,7 +125,7 @@ class CameraProvider extends ChangeNotifier {
   void addFeedback(AIFeedback feedback) {
     _activeFeedbacks.add(feedback);
     notifyListeners();
-    
+
     // Auto-remove feedback after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       _activeFeedbacks.remove(feedback);

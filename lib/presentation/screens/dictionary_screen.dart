@@ -29,7 +29,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       'pronunciation': 'Hag-AH-pap',
     },
     {
-      'word': 'Thank you',
+      'word': 'Thank You',
       'category': 'Greetings',
       'pronunciation': 'MAR-sah-ming POW',
     },
@@ -93,13 +93,13 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                   onChanged: (value) {
                     setState(() => _searchQuery = value);
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Search signs...',
                     hintStyle: TextStyle(color: AppColors.disabled),
                     border: InputBorder.none,
-                    prefixIcon: const Icon(Icons.search,
-                        color: AppColors.textSecondary),
-                    contentPadding: const EdgeInsets.symmetric(
+                    prefixIcon:
+                        Icon(Icons.search, color: AppColors.textSecondary),
+                    contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
@@ -154,7 +154,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Column(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.search_off_outlined,
                           size: 48,
                           color: AppColors.disabled,

@@ -159,7 +159,7 @@
     },
     {
       "name": "hooks",
-      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/hooks-1.0.2",
+      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/hooks-1.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.10"
     },
@@ -344,6 +344,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "quiver",
+      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/quiver-3.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "record_use",
+      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/record_use-0.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
       "name": "sky_engine",
       "rootUri": "file:///Users/Develop/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -392,6 +404,12 @@
       "languageVersion": "3.7"
     },
     {
+      "name": "tflite_flutter",
+      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/tflite_flutter-0.10.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "typed_data",
       "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",
@@ -405,7 +423,7 @@
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/vm_service-15.1.0",
+      "rootUri": "file:///Users/ahronjanl.rafaelahron.0804icloudcom/.pub-cache/hosted/pub.dev/vm_service-15.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },

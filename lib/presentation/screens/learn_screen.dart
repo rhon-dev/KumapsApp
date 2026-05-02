@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
@@ -15,11 +16,20 @@ class LearnScreen extends StatefulWidget {
 }
 
 class _LearnScreenState extends State<LearnScreen> with WidgetsBindingObserver {
+  bool get _isCameraSupported {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
+    if (_isCameraSupported) {
+      _initializeCamera();
+    } else {
+      debugPrint('Camera is not supported on this platform.');
+    }
   }
 
   void _initializeCamera() async {
@@ -93,7 +103,7 @@ class _LearnScreenState extends State<LearnScreen> with WidgetsBindingObserver {
 
     if (selectedLesson == null) {
       return const Center(
-        child: Text('No lessons available'),
+        child: Text('No lessons available.'),
       );
     }
 
@@ -150,7 +160,7 @@ class _LearnScreenState extends State<LearnScreen> with WidgetsBindingObserver {
 
                 // Lesson details
                 Text(
-                  'About this lesson',
+                  'About This Lesson',
                   style: AppTypography.titleMedium(context),
                 ),
                 const SizedBox(height: 8),
@@ -188,6 +198,16 @@ class _LearnScreenState extends State<LearnScreen> with WidgetsBindingObserver {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
+                      if (!_isCameraSupported) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Camera practice mode is not supported on macOS.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       appState.setCameraMode(CameraMode.practice);
                       context.read<CameraProvider>().startCameraPreview();
                     },
@@ -289,9 +309,9 @@ class _LearnScreenState extends State<LearnScreen> with WidgetsBindingObserver {
                       color: Colors.black.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
+                    child: const Text(
                       'PRACTICE MODE',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

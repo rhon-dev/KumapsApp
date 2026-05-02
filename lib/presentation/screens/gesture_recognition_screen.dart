@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
@@ -16,11 +17,29 @@ class GestureRecognitionScreen extends StatefulWidget {
 
 class _GestureRecognitionScreenState extends State<GestureRecognitionScreen>
     with WidgetsBindingObserver {
+  bool get _isCameraSupported {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
+    if (_isCameraSupported) {
+      _initializeCamera();
+    } else {
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Gesture recognition camera is not supported on macOS.'),
+            ),
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -54,6 +73,10 @@ class _GestureRecognitionScreenState extends State<GestureRecognitionScreen>
 
   /// Initialize camera
   Future<void> _initializeCamera() async {
+    if (!_isCameraSupported) {
+      return;
+    }
+
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -96,6 +119,17 @@ class _GestureRecognitionScreenState extends State<GestureRecognitionScreen>
       body: Consumer<EnhancedCameraProvider>(
         builder: (context, provider, _) {
           if (!provider.isInitialized) {
+            if (!_isCameraSupported) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Camera gesture recognition is not supported on macOS.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

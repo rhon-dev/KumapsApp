@@ -171,13 +171,13 @@ class AppTheme {
         surfaceDim: AppColors.borderLight,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 24),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: AppColors.textPrimary, size: 24),
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
@@ -247,12 +247,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
-        labelStyle: TextStyle(
+        labelStyle: const TextStyle(
           color: AppColors.textSecondary,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        hintStyle: TextStyle(
+        hintStyle: const TextStyle(
           color: AppColors.disabled,
           fontSize: 14,
         ),
@@ -296,10 +296,10 @@ class AppTheme {
         primary: AppColors.primaryLight,
         secondary: AppColors.secondaryLight,
         error: AppColors.errorLight,
-        surface: Color(0xFF2A2A2A),
+        surface: const Color(0xFF2A2A2A),
       ),
       scaffoldBackgroundColor: AppColors.surfaceDark,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
         foregroundColor: AppColors.textLight,
         elevation: 0,

@@ -45,7 +45,7 @@ class LandmarkExtractor {
     }
 
     // Pad with zeros if buffer not full
-    final expectedSize = frameBufferSize * featuresPerFrame;
+    const expectedSize = frameBufferSize * featuresPerFrame;
     while (result.length < expectedSize) {
       result.add(0.0);
     }
@@ -310,7 +310,7 @@ class LandmarkExtractor {
   List<HandJoint> _generateDefaultJoints() {
     return List.generate(20, (i) {
       return HandJoint(
-        position: Offset(0.5, 0.5),
+        position: const Offset(0.5, 0.5),
         name: 'joint-$i',
         confidence: 0.0,
       );

@@ -69,9 +69,9 @@ class CameraFeedbackOverlay extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
+                    const Text(
                       'Recording',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

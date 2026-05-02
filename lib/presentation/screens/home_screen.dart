@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
               backgroundColor: AppColors.background,
               elevation: 0,
               title: Text(
-                'Kumaps',
+                'Kumpas',
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     // Greeting and motivation
                     Text(
-                      'Magandang umaga!',
+                      'Good morning!',
                       style: AppTypography.headlineMedium(context),
                     ),
                     const SizedBox(height: 4),
@@ -116,7 +116,7 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [

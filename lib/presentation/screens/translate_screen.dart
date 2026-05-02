@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
@@ -17,6 +18,11 @@ class _TranslateScreenState extends State<TranslateScreen>
     with WidgetsBindingObserver {
   bool _isTranslating = false;
   String _translatedText = '';
+
+  bool get _isCameraSupported {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
 
   @override
   void initState() {
@@ -114,6 +120,16 @@ class _TranslateScreenState extends State<TranslateScreen>
                 icon: Icons.videocam_outlined,
                 color: AppColors.primary,
                 onTap: () async {
+                  if (!_isCameraSupported) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Camera translation is not supported on macOS.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
                   await _initializeAndStartTranslate(cameraProvider);
                 },
               ),
@@ -157,9 +173,9 @@ class _TranslateScreenState extends State<TranslateScreen>
                 runSpacing: 8,
                 children: [
                   'Hello',
-                  'Thank you',
-                  'Good morning',
-                  'How are you?',
+                  'Thank You',
+                  'Good Morning',
+                  'How Are You?',
                   'Goodbye',
                   'Help',
                 ]
@@ -248,6 +264,11 @@ class _TranslateScreenState extends State<TranslateScreen>
 
   Future<void> _initializeAndStartTranslate(
       CameraProvider cameraProvider) async {
+    if (!_isCameraSupported) {
+      debugPrint('Camera translation is not supported on this platform.');
+      return;
+    }
+
     try {
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
@@ -343,9 +364,9 @@ class _TranslateScreenState extends State<TranslateScreen>
                       color: Colors.black.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
+                    child: const Text(
                       'LIVE TRANSLATION',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

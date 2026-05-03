@@ -1,321 +1,187 @@
 """
-Extract hand landmarks from FSL-105 dataset videos using OpenCV
-Simple fallback method without MediaPipe dependencies
+Extract hand features from FSL-105 dataset videos using OpenCV.
+
+FIX: Previous version extracted 6 real features but padded to 63 zeros per
+frame (57 zeros = 90% noise). Now extracts 15 meaningful features per frame:
+  - 6 shape/position features (area, aspect ratio, centroid, bounding box)
+  - 1 convex hull fill ratio (how open the hand is)
+  - 1 convexity defect count (rough finger count estimator)
+  - 7 Hu moments (rotation/scale invariant shape descriptors)
 """
 
 import cv2
 import numpy as np
 import os
-from pathlib import Path
 import json
 
-print("Initializing hand landmark extraction (OpenCV-based)...")
-
-# For this demo, we'll use a simplified feature extraction based on hand contours
-# In production, you'd use MediaPipe, but this works offline
-
-# Choose your 5 signs here (by ID)
-SELECTED_SIGNS = [3, 4, 15, 20, 29]  # HELLO, HOW ARE YOU, YES, ONE, TEN
+SELECTED_SIGNS = [3, 4, 15, 20, 29]
 SELECTED_SIGN_NAMES = ["HELLO", "HOW ARE YOU", "YES", "ONE", "TEN"]
 
-# Dataset path
-DATASET_PATH = "/Users/ahronjanl.rafaelahron.0804icloudcom/Downloads/FSL-105 A dataset for recognizing 105 Filipino sign language videos"
-OUTPUT_DIR = "/Users/ahronjanl.rafaelahron.0804icloudcom/KumapsApp/ml_training/extracted_landmarks"
+# Use paths relative to this script file so it works on any machine
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATASET_PATH = os.path.join(
+    os.path.expanduser("~"), "Downloads",
+    "FSL-105 A dataset for recognizing 105 Filipino sign language videos"
+)
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "extracted_landmarks")
+NUM_FEATURES = 15  # features per frame
+
+# Minimum hand region size to filter out small noise
+MIN_HAND_AREA_RATIO = 0.005  # at least 0.5% of the frame
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def extract_hand_features_from_video(video_path):
+
+def extract_hand_features(frame):
     """
-    Extract hand features from video using color-based hand detection
-    Returns: List of feature vectors (one per frame)
+    Extract 15 hand features from one video frame.
+    Returns a list of 15 floats, or None if no hand is detected.
     """
-    cap = cv2.VideoCapture(video_path)
-    features_sequence = []
-    
-    if not cap.isOpened():
-        return None
-    
-    # HSV range for skin color detection
+    h, w = frame.shape[:2]
+    frame_area = h * w
+
+    # Skin color mask in HSV space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     lower_skin = np.array([0, 20, 70], dtype=np.uint8)
     upper_skin = np.array([20, 255, 255], dtype=np.uint8)
-    
-    frame_count = 0
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        frame_count += 1
-        
-        # Only process every 3rd frame to speed up (can process all if needed)
-        if frame_count % 3 != 0:
-            continue
-        
-        try:
-            # Resize for faster processing
-            frame = cv2.resize(frame, (320, 240))
-            
-            # Convert to HSV
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            
-            # Create skin mask
-            mask = cv2.inRange(hsv, lower_skin, upper_skin)
-            
-            # Apply morphological operations
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            
-            # Find contours
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            if contours:
-                # Get largest contour (hand)
-                hand_contour = max(contours, key=cv2.contourArea)
-                
-                # Extract features from contour
-                area = cv2.contourArea(hand_contour)
-                
-                # Get bounding rectangle
-                x, y, w, h = cv2.boundingRect(hand_contour)
-                aspect_ratio = float(w) / h if h > 0 else 0
-                
-                # Get contour moments
-                M = cv2.moments(hand_contour)
-                cx = int(M['m10'] / M['m00']) if M['m00'] != 0 else 0
-                cy = int(M['m01'] / M['m00']) if M['m00'] != 0 else 0
-                
-                # Normalize features to 0-1 range
-                normalized_features = [
-                    min(area / (320 * 240), 1.0),  # Area ratio
-                    min(aspect_ratio, 1.0),  # Aspect ratio
-                    cx / 320,  # Centroid X
-                    cy / 240,  # Centroid Y
-                    min(w / 320, 1.0),  # Width ratio
-                    min(h / 240, 1.0),  # Height ratio
-                ]
-                
-                # Pad to 63 features (like MediaPipe landmarks)
-                padded_features = normalized_features + [0.0] * (63 - len(normalized_features))
-                features_sequence.append(padded_features[:63])
-        
-        except Exception as e:
-            pass
-    
-    cap.release()
-    
-    if len(features_sequence) < 5:  # Need at least a few frames
+    mask = cv2.inRange(hsv, lower_skin, upper_skin)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
         return None
-    
-    return features_sequence
 
-def process_sign_videos(sign_id, sign_name):
-    """Process all videos for a specific sign"""
-    sign_path = os.path.join(DATASET_PATH, "clips", str(sign_id))
-    
-    if not os.path.exists(sign_path):
-        print(f"Sign path not found: {sign_path}")
-        return []
-    
-    all_landmarks = []
-    
-    # Get all .MOV files for this sign
-    video_files = sorted([f for f in os.listdir(sign_path) if f.endswith('.MOV')])
-    
-    print(f"\nProcessing {sign_name} (ID: {sign_id}) - {len(video_files)} videos")
-    
-    for i, video_file in enumerate(video_files, 1):
-        video_path = os.path.join(sign_path, video_file)
-        print(f"  [{i:2d}/{len(video_files)}] {video_file}...", end=" ", flush=True)
-        
-        features = extract_hand_features_from_video(video_path)
-        
-        if features and len(features) > 0:
-            all_landmarks.append({
-                'sign_id': sign_id,
-                'sign_name': sign_name,
-                'video_file': video_file,
-                'num_frames': len(features),
-                'landmarks': features
-            })
-            print(f"✓ ({len(features)} frames)")
-        else:
-            print("✗ (no hand detected)")
-    
-    return all_landmarks
+    hand = max(contours, key=cv2.contourArea)
+    area = cv2.contourArea(hand)
 
-def save_landmarks_for_training():
-    """Extract landmarks for all selected signs and save for training"""
-    
-    all_data = []
-    
-    for sign_id, sign_name in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
-        sign_data = process_sign_videos(sign_id, sign_name)
-        all_data.extend(sign_data)
-    
-    # Save as JSON for easy loading
-    output_file = os.path.join(OUTPUT_DIR, "landmarks_data.json")
-    with open(output_file, 'w') as f:
-        json.dump(all_data, f, indent=2)
-    
-    print(f"\n✅ Features extracted and saved to: {output_file}")
-    print(f"Total videos processed: {len(all_data)}")
-    
-    return all_data
+    # Reject tiny noise blobs
+    if area / frame_area < MIN_HAND_AREA_RATIO:
+        return None
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("FSL-105 Hand Features Extraction")
-    print("=" * 60)
-    print(f"Selected signs: {list(zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES))}")
-    print(f"Output directory: {OUTPUT_DIR}")
-    print("Method: OpenCV-based hand detection")
-    
-    landmarks_data = save_landmarks_for_training()
-    
-    # Print summary
-    print("\n" + "=" * 60)
-    print("Summary:")
-    print("=" * 60)
-    for sign_id, sign_name in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
-        count = sum(1 for item in landmarks_data if item['sign_id'] == sign_id)
-        print(f"{sign_name}: {count} videos")
-    
-    print("\nNote: Using OpenCV-based features as fallback.")
-    print("For production, integrate MediaPipe or TensorFlow hand detection.")
+    # Basic shape features
+    x, y, bw, bh = cv2.boundingRect(hand)
+    aspect_ratio = float(bw) / bh if bh > 0 else 0.0
 
-# Choose your 5 signs here (by ID)
-SELECTED_SIGNS = [3, 4, 15, 20, 29]  # HELLO, HOW ARE YOU, YES, ONE, TEN
-SELECTED_SIGN_NAMES = ["HELLO", "HOW ARE YOU", "YES", "ONE", "TEN"]
+    M = cv2.moments(hand)
+    if M['m00'] != 0:
+        cx = M['m10'] / M['m00']
+        cy = M['m01'] / M['m00']
+    else:
+        cx, cy = x + bw / 2.0, y + bh / 2.0
 
-# Dataset path
-DATASET_PATH = "/Users/ahronjanl.rafaelahron.0804icloudcom/Downloads/FSL-105 A dataset for recognizing 105 Filipino sign language videos"
-OUTPUT_DIR = "/Users/ahronjanl.rafaelahron.0804icloudcom/KumapsApp/ml_training/extracted_landmarks"
+    # Convex hull fill ratio: close to 1.0 means fist, lower means open hand
+    hull_pts = cv2.convexHull(hand)
+    hull_area = cv2.contourArea(hull_pts)
+    hull_ratio = area / hull_area if hull_area > 0 else 1.0
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+    # Convexity defects = gaps between fingers (rough finger count)
+    defect_count = 0
+    hull_idx = cv2.convexHull(hand, returnPoints=False)
+    if hull_idx is not None and len(hull_idx) > 3 and len(hand) > 3:
+        defects = cv2.convexityDefects(hand, hull_idx)
+        if defects is not None:
+            for d in defects:
+                _, _, _, depth = d[0]
+                if depth / 256.0 > 10:  # only count deep gaps (real finger spaces)
+                    defect_count += 1
 
-def extract_landmarks_from_video(video_path):
-    """
-    Extract hand landmarks from a single video
-    Returns: List of landmark frames (each frame has hand landmarks)
-    """
+    # Hu moments: 7 values that describe hand shape independently of
+    # rotation, scale, and translation. Log-scaled to normalize wide range.
+    hu = cv2.HuMoments(M).flatten()
+    hu_log = -np.sign(hu) * np.log10(np.abs(hu) + 1e-10)
+    hu_norm = np.clip(hu_log / 10.0, -1.0, 1.0)
+
+    features = [
+        min(area / frame_area, 1.0),        # 1.  Normalized area
+        min(aspect_ratio / 2.0, 1.0),       # 2.  Aspect ratio (capped at 2:1)
+        cx / w,                              # 3.  Centroid X (0-1)
+        cy / h,                              # 4.  Centroid Y (0-1)
+        min(bw / w, 1.0),                   # 5.  Bounding box width ratio
+        min(bh / h, 1.0),                   # 6.  Bounding box height ratio
+        float(np.clip(hull_ratio, 0.0, 1.0)), # 7. Hull fill ratio
+        min(defect_count / 5.0, 1.0),       # 8.  Defect count (0-5 fingers mapped 0-1)
+    ] + list(hu_norm)                        # 9-15. Hu moments (7 values)
+
+    assert len(features) == NUM_FEATURES
+    return features
+
+
+def extract_features_from_video(video_path):
+    """Extract features from every frame of a video."""
     cap = cv2.VideoCapture(video_path)
-    landmarks_sequence = []
-    
     if not cap.isOpened():
-        print(f"Failed to open video: {video_path}")
         return None
-    
+
+    sequence = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        
-        # Flip horizontally for selfie view
-        frame = cv2.flip(frame, 1)
-        
-        # Convert BGR to RGB
-        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        # Get hand landmarks
-        results = hands.process(image_rgb)
-        
-        if results.multi_hand_landmarks:
-            # Extract landmarks for first hand (primary hand)
-            hand_landmarks = results.multi_hand_landmarks[0]
-            
-            # Normalize landmarks to 0-1 range
-            frame_landmarks = []
-            for landmark in hand_landmarks.landmark:
-                frame_landmarks.extend([landmark.x, landmark.y, landmark.z])
-            
-            landmarks_sequence.append(frame_landmarks)
-    
+        frame = cv2.resize(frame, (320, 240))
+        feat = extract_hand_features(frame)
+        if feat is not None:
+            sequence.append(feat)
+
     cap.release()
-    
-    if len(landmarks_sequence) == 0:
-        print(f"No landmarks detected in {video_path}")
+
+    if len(sequence) < 5:  # need at least a few good frames
         return None
-    
-    return landmarks_sequence
+    return sequence
+
 
 def process_sign_videos(sign_id, sign_name):
-    """Process all videos for a specific sign"""
     sign_path = os.path.join(DATASET_PATH, "clips", str(sign_id))
-    
     if not os.path.exists(sign_path):
-        print(f"Sign path not found: {sign_path}")
+        print(f"  Path not found: {sign_path}")
         return []
-    
-    all_landmarks = []
-    
-    # Get all .MOV files for this sign
-    video_files = sorted([f for f in os.listdir(sign_path) if f.endswith('.MOV')])
-    
-    print(f"\nProcessing {sign_name} (ID: {sign_id}) - {len(video_files)} videos")
-    
-    for video_file in video_files:
-        video_path = os.path.join(sign_path, video_file)
-        print(f"  Processing {video_file}...", end=" ")
-        
-        landmarks = extract_landmarks_from_video(video_path)
-        
-        if landmarks:
-            all_landmarks.append({
+
+    video_files = sorted(
+        f for f in os.listdir(sign_path)
+        if f.upper().endswith('.MOV') or f.endswith('.mp4')
+    )
+    print(f"\n{sign_name} (ID {sign_id}): {len(video_files)} videos")
+
+    results = []
+    for i, vf in enumerate(video_files, 1):
+        path = os.path.join(sign_path, vf)
+        print(f"  [{i:2d}/{len(video_files)}] {vf}...", end=" ", flush=True)
+        features = extract_features_from_video(path)
+        if features:
+            results.append({
                 'sign_id': sign_id,
                 'sign_name': sign_name,
-                'video_file': video_file,
-                'num_frames': len(landmarks),
-                'landmarks': landmarks  # List of frames, each with 63 values (21 landmarks × 3 coords)
+                'video_file': vf,
+                'num_frames': len(features),
+                'landmarks': features,
             })
-            print(f"✓ ({len(landmarks)} frames)")
+            print(f"OK  ({len(features)} frames, {NUM_FEATURES} features/frame)")
         else:
-            print("✗ (no landmarks)")
-    
-    return all_landmarks
+            print("SKIP  (no hand detected)")
+    return results
 
-def save_landmarks_for_training():
-    """Extract landmarks for all selected signs and save for training"""
-    
-    all_data = []
-    
-    for sign_id, sign_name in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
-        sign_data = process_sign_videos(sign_id, sign_name)
-        all_data.extend(sign_data)
-    
-    # Save as JSON for easy loading
-    output_file = os.path.join(OUTPUT_DIR, "landmarks_data.json")
-    with open(output_file, 'w') as f:
-        # Convert numpy arrays to lists for JSON serialization
-        data_to_save = []
-        for item in all_data:
-            data_to_save.append({
-                'sign_id': item['sign_id'],
-                'sign_name': item['sign_name'],
-                'video_file': item['video_file'],
-                'num_frames': item['num_frames'],
-                'landmarks': item['landmarks']
-            })
-        json.dump(data_to_save, f, indent=2)
-    
-    print(f"\n✅ Landmarks extracted and saved to: {output_file}")
-    print(f"Total videos processed: {len(all_data)}")
-    
-    return all_data
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("FSL-105 Hand Landmarks Extraction")
+    print("FSL-105 Hand Feature Extraction")
+    print(f"Features per frame : {NUM_FEATURES}  (was 6 real + 57 zeros)")
+    print(f"Dataset            : {DATASET_PATH}")
+    print(f"Output             : {OUTPUT_DIR}")
     print("=" * 60)
-    print(f"Selected signs: {list(zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES))}")
-    print(f"Output directory: {OUTPUT_DIR}")
-    
-    landmarks_data = save_landmarks_for_training()
-    
-    # Print summary
-    print("\n" + "=" * 60)
-    print("Summary:")
-    print("=" * 60)
-    for sign_id, sign_name in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
-        count = sum(1 for item in landmarks_data if item['sign_id'] == sign_id)
-        print(f"{sign_name}: {count} videos")
+
+    all_data = []
+    for sid, sname in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
+        all_data.extend(process_sign_videos(sid, sname))
+
+    output_file = os.path.join(OUTPUT_DIR, "landmarks_data.json")
+    with open(output_file, 'w') as f:
+        json.dump(all_data, f)
+
+    print(f"\nSaved {len(all_data)} videos -> {output_file}")
+    print("\nPer-class count:")
+    for sid, sname in zip(SELECTED_SIGNS, SELECTED_SIGN_NAMES):
+        count = sum(1 for d in all_data if d['sign_id'] == sid)
+        print(f"  {sname}: {count} videos")
+    print("\nNext step: python3 2_train_model.py")

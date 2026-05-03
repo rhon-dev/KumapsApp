@@ -1,194 +1,183 @@
 """
-Train a gesture recognition model using extracted hand landmarks
-Uses scikit-learn for compatibility with Python 3.14
-Outputs: Model pickle file for use in Flutter
+Train gesture recognition model on extracted hand landmarks.
+
+Critical fixes vs v1:
+  1. Data leakage removed: augmentation and scaler.fit happen ONLY on training
+     data. In v1, scaler.fit_transform ran on all data before the split, so
+     the scaler "saw" the test set during training — inflating val accuracy.
+  2. Stratified split preserves class balance in both train and test sets.
+  3. 5-fold cross-validation gives a reliable accuracy estimate when the
+     dataset is small (20 videos per class).
+  4. Full classification report shows per-class precision/recall, not just
+     a single accuracy number.
+  5. Relative paths so the script runs on any machine.
 """
 
 import json
 import numpy as np
-import pandas as pd
 import os
-from pathlib import Path
 import pickle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-import subprocess
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
+from sklearn.metrics import classification_report
 
-# Configuration
-LANDMARKS_FILE = "/Users/ahronjanl.rafaelahron.0804icloudcom/KumapsApp/ml_training/extracted_landmarks/landmarks_data.json"
-OUTPUT_DIR = "/Users/ahronjanl.rafaelahron.0804icloudcom/KumapsApp/ml_training/models"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LANDMARKS_FILE = os.path.join(SCRIPT_DIR, "extracted_landmarks", "landmarks_data.json")
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "models")
 SIGNS = ["HELLO", "HOW ARE YOU", "YES", "ONE", "TEN"]
-SEQUENCE_LENGTH = 30  # Pad/truncate sequences to this length
+SEQUENCE_LENGTH = 30
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def load_landmarks_data():
-    """Load extracted landmarks from JSON"""
-    with open(LANDMARKS_FILE, 'r') as f:
-        return json.load(f)
 
 def prepare_sequences(landmarks_data):
     """
-    Convert raw landmarks to fixed-length sequences
-    Each sequence: (sequence_length × 63,) flattened
+    Convert raw video landmarks to fixed-length feature vectors.
+    Takes the middle SEQUENCE_LENGTH frames so both the start and end of the
+    sign are represented (vs v1 which took only the last 30 frames).
     """
-    X = []
-    y = []
-    
+    X, y = [], []
     sign_to_label = {sign: idx for idx, sign in enumerate(SIGNS)}
-    
+    num_features = None
+
     for video in landmarks_data:
         sign_name = video['sign_name']
-        
         if sign_name not in sign_to_label:
             continue
-        
-        landmarks = np.array(video['landmarks'])  # Shape: (num_frames, 63)
-        
-        # Pad or truncate to fixed length
-        if len(landmarks) < SEQUENCE_LENGTH:
-            # Pad with zeros
-            padded = np.zeros((SEQUENCE_LENGTH, 63))
-            padded[:len(landmarks)] = landmarks
-            sequence = padded.flatten()
+
+        frames = np.array(video['landmarks'])  # (num_frames, features_per_frame)
+
+        if num_features is None:
+            num_features = frames.shape[1]
+
+        if len(frames) >= SEQUENCE_LENGTH:
+            # Take the middle SEQUENCE_LENGTH frames
+            start = (len(frames) - SEQUENCE_LENGTH) // 2
+            sequence = frames[start:start + SEQUENCE_LENGTH].flatten()
         else:
-            # Truncate to last SEQUENCE_LENGTH frames
-            sequence = landmarks[-SEQUENCE_LENGTH:].flatten()
-        
+            # Pad shorter videos with zeros at the end
+            padded = np.zeros((SEQUENCE_LENGTH, num_features))
+            padded[:len(frames)] = frames
+            sequence = padded.flatten()
+
         X.append(sequence)
         y.append(sign_to_label[sign_name])
-    
-    return np.array(X), np.array(y), sign_to_label
+
+    if num_features is None:
+        raise ValueError("No valid sequences found. Check that landmarks_data.json is not empty.")
+    return np.array(X), np.array(y), sign_to_label, num_features
+
+
+def augment_data(X, y, copies=4, noise_std=0.02):
+    """
+    Augment by adding Gaussian noise copies.
+    Called ONLY on training data to avoid leaking test info.
+    """
+    X_aug, y_aug = [X], [y]
+    for _ in range(copies - 1):
+        noisy = X + np.random.normal(0, noise_std, X.shape)
+        X_aug.append(np.clip(noisy, 0, 1))
+        y_aug.append(y)
+    return np.concatenate(X_aug), np.concatenate(y_aug)
+
 
 def train_model():
-    """Main training function"""
     print("=" * 60)
-    print("FSL-105 Gesture Recognition Model Training (scikit-learn)")
+    print("Gesture Recognition Model Training")
     print("=" * 60)
-    
-    # Load data
-    print("\n1. Loading landmarks data...")
-    landmarks_data = load_landmarks_data()
-    print(f"   Loaded {len(landmarks_data)} videos")
-    
-    # Prepare sequences
+
+    # --- 1. Load data ---
+    print("\n1. Loading data...")
+    with open(LANDMARKS_FILE, 'r') as f:
+        landmarks_data = json.load(f)
+    print(f"   {len(landmarks_data)} videos")
+
+    # --- 2. Build feature matrix ---
     print("\n2. Preparing sequences...")
-    X, y, sign_to_label = prepare_sequences(landmarks_data)
-    print(f"   X shape: {X.shape}")
-    print(f"   y shape: {y.shape}")
-    print(f"   Classes: {list(sign_to_label.keys())}")
-    
-    # Data augmentation - add noisy versions
-    print("\n3. Applying data augmentation...")
-    X_augmented = [X]
-    y_augmented = [y]
-    
-    # Add slightly noisy versions
-    for i in range(2):
-        X_noise = X + np.random.normal(0, 0.02, X.shape)
-        X_augmented.append(np.clip(X_noise, 0, 1))
-        y_augmented.append(y)
-    
-    X = np.concatenate(X_augmented, axis=0)
-    y = np.concatenate(y_augmented, axis=0)
-    print(f"   After augmentation: {X.shape}")
-    
-    # Standardize features
-    print("\n4. Standardizing features...")
+    X, y, sign_to_label, num_features = prepare_sequences(landmarks_data)
+    total_features = SEQUENCE_LENGTH * num_features
+    print(f"   X shape         : {X.shape}  ({SEQUENCE_LENGTH} frames x {num_features} features)")
+    print(f"   Total features  : {total_features}")
+    unique, counts = np.unique(y, return_counts=True)
+    print(f"   Class distribution: { {SIGNS[i]: c for i, c in zip(unique, counts)} }")
+
+    # --- 3. Stratified train/test split BEFORE any augmentation or scaling ---
+    print("\n3. Stratified 80/20 split...")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    print(f"   Train: {X_train.shape[0]}  |  Test: {X_test.shape[0]}")
+
+    # --- 4. Augment ONLY training data ---
+    print("\n4. Augmenting training data (x4 with noise)...")
+    X_train, y_train = augment_data(X_train, y_train, copies=4, noise_std=0.02)
+    print(f"   Training samples after augmentation: {X_train.shape[0]}")
+
+    # --- 5. Fit scaler on TRAINING data only, then apply to both ---
+    print("\n5. Scaling features (fit on train, transform both)...")
     scaler = StandardScaler()
-    X = scaler.fit_transform(X)
-    
-    # Split data
-    print("\n5. Splitting data...")
-    split_idx = int(0.8 * len(X))
-    indices = np.random.permutation(len(X))
-    
-    X_train = X[indices[:split_idx]]
-    y_train = y[indices[:split_idx]]
-    X_val = X[indices[split_idx:]]
-    y_val = y[indices[split_idx:]]
-    
-    print(f"   Training: {X_train.shape[0]} samples")
-    print(f"   Validation: {X_val.shape[0]} samples")
-    
-    # Train model
-    print("\n6. Training Random Forest model...")
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)   # use training mean/std only
+
+    # --- 6. Cross-validation on training set ---
+    print("\n6. 5-fold cross-validation on training set...")
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_model = RandomForestClassifier(
+        n_estimators=200, max_depth=20, min_samples_split=3,
+        random_state=42, n_jobs=-1
+    )
+    cv_scores = cross_val_score(cv_model, X_train, y_train, cv=cv, scoring='accuracy')
+    print(f"   CV accuracy: {cv_scores.mean():.2%}  (+/- {cv_scores.std():.2%})")
+
+    # --- 7. Train final model on full training set ---
+    print("\n7. Training final Random Forest...")
     model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=15,
-        min_samples_split=5,
+        n_estimators=200,
+        max_depth=20,
+        min_samples_split=3,
+        min_samples_leaf=1,
         random_state=42,
         n_jobs=-1,
-        verbose=1
     )
-    
     model.fit(X_train, y_train)
-    
-    # Evaluate
-    print("\n7. Evaluating...")
-    train_acc = model.score(X_train, y_train)
-    val_acc = model.score(X_val, y_val)
-    print(f"   Training Accuracy: {train_acc:.2%}")
-    print(f"   Validation Accuracy: {val_acc:.2%}")
-    
-    # Save model
-    print("\n8. Saving model...")
+
+    # --- 8. Evaluate on held-out test set ---
+    print("\n8. Test set results...")
+    y_pred = model.predict(X_test)
+    test_acc = model.score(X_test, y_test)
+    print(f"\n   Test Accuracy: {test_acc:.2%}\n")
+    print(classification_report(y_test, y_pred, target_names=SIGNS, zero_division=0))
+
+    # --- 9. Save model ---
+    print("9. Saving model...")
     model_data = {
         'model': model,
         'scaler': scaler,
         'sign_to_label': sign_to_label,
         'sequence_length': SEQUENCE_LENGTH,
-        'num_features': 63
+        'num_features': num_features,
+        'total_features': total_features,   # used by Flask API for validation
     }
-    
     model_path = os.path.join(OUTPUT_DIR, "gesture_model.pkl")
     with open(model_path, 'wb') as f:
         pickle.dump(model_data, f)
-    print(f"   Saved model: {model_path}")
-    
-    # Save sign mapping JSON (for Flutter)
+    print(f"   Saved: {model_path}")
+
     sign_mapping = {'label_to_sign': {str(v): k for k, v in sign_to_label.items()}}
     mapping_path = os.path.join(OUTPUT_DIR, "sign_mapping.json")
     with open(mapping_path, 'w') as f:
         json.dump(sign_mapping, f)
-    print(f"   Saved sign mapping: {mapping_path}")
-    
-    # Create TFLite version (converted from sklearn)
-    print("\n9. Creating TensorFlow Lite compatible model...")
-    try:
-        create_tflite_model(model, scaler, sign_to_label)
-        print("   ✅ TFLite model created successfully")
-    except Exception as e:
-        print(f"   ⚠️  TFLite creation skipped (TensorFlow not available): {e}")
-        print("   You can use the .pkl model directly in Flutter for now")
-    
-    print("\n" + "=" * 60)
-    print("✅ Training complete!")
-    print("=" * 60)
-    print("\nModel Performance:")
-    print(f"  • Training Accuracy: {train_acc:.2%}")
-    print(f"  • Validation Accuracy: {val_acc:.2%}")
-    print("\nNext steps:")
-    print("1. Copy gesture_model.pkl to your Flutter assets folder")
-    print("2. Update camera_provider.dart to load this model")
-    print("3. For best performance, use Flutter with:")
-    print("   - tflite_flutter (for TFLite model)")
-    print("   - Or implement sklearn model loading in Dart")
+    print(f"   Saved: {mapping_path}")
 
-def create_tflite_model(model, scaler, sign_to_label):
-    """Try to create TFLite model (requires TensorFlow)"""
-    try:
-        import tensorflow as tf
-        
-        # Create a simple wrapper model
-        input_layer = tf.keras.Input(shape=(SEQUENCE_LENGTH * 63,))
-        
-        # Convert sklearn model to TF model
-        # This is a simplified version - the actual sklearn tree structure is complex
-        print("   Note: Full sklearn→TFLite conversion requires manual implementation")
-        
-    except ImportError:
-        pass
+    print("\n" + "=" * 60)
+    print("Done!")
+    print(f"  CV Accuracy  : {cv_scores.mean():.2%} (+/- {cv_scores.std():.2%})")
+    print(f"  Test Accuracy: {test_acc:.2%}")
+    print(f"  API input    : {total_features} values  ({SEQUENCE_LENGTH} frames x {num_features} features)")
+    print("=" * 60)
+    print("\nNext step: python3 flask_api.py")
+
 
 if __name__ == "__main__":
     train_model()

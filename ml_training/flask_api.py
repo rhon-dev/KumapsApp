@@ -37,6 +37,11 @@ try:
     scaler = model_data['scaler']
     sign_to_label = model_data['sign_to_label']
     reverse_mapping = {v: k for k, v in sign_to_label.items()}
+    # Read expected input size from the model itself so this never goes out of sync
+    EXPECTED_FEATURES = model_data.get(
+        'total_features',
+        model_data['sequence_length'] * model_data['num_features']
+    )
     
     print(f"✅ Model loaded: {MODEL_PATH}")
     print(f"✅ Signs: {list(reverse_mapping.values())}")
@@ -97,10 +102,10 @@ def predict():
         landmarks = data['landmarks']
         confidence_threshold = data.get('confidence_threshold', 0.7)
         
-        # Validate input
-        if len(landmarks) != 1890:  # 30 frames × 63 features
+        # Validate input size against what the loaded model expects
+        if len(landmarks) != EXPECTED_FEATURES:
             return jsonify({
-                'error': f'Expected 1890 landmark values, got {len(landmarks)}'
+                'error': f'Expected {EXPECTED_FEATURES} landmark values, got {len(landmarks)}'
             }), 400
         
         # Prepare features
@@ -150,9 +155,9 @@ def info():
         'model_path': MODEL_PATH,
         'signs': list(reverse_mapping.values()),
         'num_signs': len(reverse_mapping),
-        'sequence_length': 30,
-        'features_per_frame': 63,
-        'total_features': 1890,
+        'sequence_length': model_data['sequence_length'],
+        'features_per_frame': model_data['num_features'],
+        'total_features': EXPECTED_FEATURES,
         'framework': 'scikit-learn'
     })
 

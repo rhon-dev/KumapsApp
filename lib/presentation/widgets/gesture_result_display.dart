@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:kumpas/theme/app_theme.dart';
 
-/// Model for gesture prediction result
 class GestureResult {
   final String sign;
-  final double confidence; // 0-1 or 0-100
+  final double confidence; // always 0–1 scale
   final Map<String, double> probabilities;
   final String? warning;
   final DateTime timestamp;
@@ -16,27 +16,23 @@ class GestureResult {
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  /// Confidence as percentage (0-100)
-  double get confidencePercent =>
-      confidence > 1.0 ? confidence : confidence * 100;
+  double get confidencePercent => (confidence.clamp(0.0, 1.0)) * 100;
 
-  /// Get confidence color
+  bool get isHighConfidence => confidencePercent >= 70;
+
   Color getConfidenceColor() {
-    final percent = confidencePercent;
-    if (percent >= 70) {
-      return const Color(0xFF4CAF50); // Green
-    } else if (percent >= 40) {
-      return const Color(0xFFFFC107); // Yellow
-    } else {
-      return const Color(0xFFF44336); // Red
-    }
+    if (confidencePercent >= 70) return AppColors.confidenceHigh;
+    if (confidencePercent >= 40) return AppColors.confidenceMedium;
+    return AppColors.confidenceLow;
   }
 
-  /// Check if confidence is high enough
-  bool get isHighConfidence => confidencePercent >= 70;
+  String getConfidenceLabel() {
+    if (confidencePercent >= 70) return 'High confidence';
+    if (confidencePercent >= 40) return 'Medium confidence';
+    return 'Low confidence — try again';
+  }
 }
 
-/// Widget for displaying gesture recognition result
 class GestureResultDisplay extends StatefulWidget {
   final GestureResult? result;
   final bool isProcessing;
@@ -65,25 +61,21 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-
     _animationController.forward();
   }
 
   @override
   void didUpdateWidget(GestureResultDisplay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Restart animation when result changes
     if (oldWidget.result != widget.result && widget.result != null) {
       _animationController.reset();
       _animationController.forward();
@@ -98,132 +90,87 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.errorMessage != null) {
-      return _buildErrorDisplay();
-    }
-
-    if (widget.isProcessing) {
-      return _buildProcessingDisplay();
-    }
-
-    if (widget.result == null) {
-      return _buildEmptyDisplay();
-    }
-
+    if (widget.errorMessage != null) return _buildErrorDisplay();
+    if (widget.isProcessing) return _buildProcessingDisplay();
+    if (widget.result == null) return _buildEmptyDisplay();
     return _buildResultDisplay();
   }
 
-  /// Display error message
   Widget _buildErrorDisplay() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade400, width: 1),
-      ),
-      child: Column(
+    return _StateCard(
+      color: AppColors.errorLight,
+      borderColor: AppColors.error.withValues(alpha:0.3),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.error, color: Colors.red.shade700),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Error',
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha:0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.wifi_off_rounded,
+                color: AppColors.error, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Could not reach AI model',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: widget.onDismiss,
-                color: Colors.red.shade700,
-                padding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.errorMessage ?? 'Unknown error occurred',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.red.shade600,
+                const SizedBox(height: 4),
+                Text(
+                  'Make sure the backend server is running and try again.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.error.withValues(alpha:0.8),
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
+          ),
+          GestureDetector(
+            onTap: widget.onDismiss,
+            child: const Icon(Icons.close, color: AppColors.error, size: 18),
           ),
         ],
       ),
     );
   }
 
-  /// Display processing state
   Widget _buildProcessingDisplay() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade300, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return _StateCard(
+      color: AppColors.secondaryLight,
+      borderColor: AppColors.secondary.withValues(alpha:0.2),
+      child: Row(
         children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.blue.shade700),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Recognizing gesture...',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Display empty state
-  Widget _buildEmptyDisplay() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Waiting for gesture...',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.secondary),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Position your hand in front of the camera and perform a gesture',
+          const SizedBox(width: 12),
+          const Text(
+            'Analyzing gesture…',
             style: TextStyle(
+              fontFamily: 'Inter',
               fontSize: 14,
-              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+              color: AppColors.secondary,
             ),
           ),
         ],
@@ -231,10 +178,44 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
     );
   }
 
-  /// Display prediction result
+  Widget _buildEmptyDisplay() {
+    return _StateCard(
+      color: AppColors.surface,
+      borderColor: AppColors.borderLight,
+      child: Column(
+        children: [
+          Icon(Icons.back_hand_outlined,
+              size: 32, color: AppColors.textHint),
+          const SizedBox(height: 10),
+          const Text(
+            'Show your hand to the camera',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Hold a sign clearly in frame and tap Capture',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: AppColors.textHint,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResultDisplay() {
     final result = widget.result!;
     final confidenceColor = result.getConfidenceColor();
+    final confidenceLabel = result.getConfidenceLabel();
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -243,147 +224,116 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: confidenceColor, width: 2),
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
             boxShadow: [
               BoxShadow(
-                color: confidenceColor.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha:0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with sign name and close button
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha:0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'RECOGNIZED SIGN',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: widget.onDismiss,
+                    child: const Icon(Icons.close,
+                        color: AppColors.textHint, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Sign name — large and prominent
+              Text(
+                result.sign.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Confidence bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Recognized Sign',
+                    confidenceLabel,
                     style: TextStyle(
+                      fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
+                      color: confidenceColor,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: widget.onDismiss,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                  Text(
+                    '${result.confidencePercent.toStringAsFixed(0)}%',
+                    style: AppTypography.monoMedium.copyWith(
+                      color: confidenceColor,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-
-              // Sign name (large)
-              Text(
-                result.sign,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  // FIX: was result.confidence / 100 — now uses normalized getter
+                  value: result.confidence.clamp(0.0, 1.0),
+                  minHeight: 8,
+                  backgroundColor: AppColors.borderLight,
+                  valueColor: AlwaysStoppedAnimation<Color>(confidenceColor),
                 ),
               ),
-              const SizedBox(height: 12),
 
-              // Confidence bar
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Confidence',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      Text(
-                        '${result.confidencePercent.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: confidenceColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: result.confidence / 100,
-                      minHeight: 8,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation(confidenceColor),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Warning if low confidence
               if (result.warning != null) ...[
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_rounded,
-                        size: 16,
-                        color: Colors.orange.shade700,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          result.warning!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _WarningChip(message: result.warning!),
               ],
 
-              // Probability breakdown
               if (result.probabilities.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text(
-                  'All Probabilities',
+                const Text(
+                  'Other possibilities',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 ..._buildProbabilityBars(result.probabilities),
               ],
-
-              // Timestamp
-              const SizedBox(height: 12),
-              Text(
-                'Recognized at ${result.timestamp.hour.toString().padLeft(2, '0')}:${result.timestamp.minute.toString().padLeft(2, '0')}:${result.timestamp.second.toString().padLeft(2, '0')}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade500,
-                ),
-              ),
             ],
           ),
         ),
@@ -391,50 +341,57 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
     );
   }
 
-  /// Build probability bars for each sign
   List<Widget> _buildProbabilityBars(Map<String, double> probabilities) {
-    return probabilities.entries.map((entry) {
-      final sign = entry.key;
-      final probability = entry.value;
-      final percentStr = '${(probability * 100).toStringAsFixed(0)}%';
+    final sorted = probabilities.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = sorted.take(4);
 
+    return top.map((entry) {
+      final probability = entry.value.clamp(0.0, 1.0);
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  sign,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+            SizedBox(
+              width: 64,
+              child: Text(
+                entry.key,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
                 ),
-                Text(
-                  percentStr,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: probability,
-                minHeight: 6,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation(
-                  Color.lerp(
-                    Colors.red.shade400,
-                    Colors.green.shade400,
-                    probability,
+            const SizedBox(width: 8),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: probability,
+                  minHeight: 6,
+                  backgroundColor: AppColors.borderLight,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.lerp(
+                      AppColors.confidenceLow,
+                      AppColors.confidenceHigh,
+                      probability,
+                    )!,
                   ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 36,
+              child: Text(
+                '${(probability * 100).toStringAsFixed(0)}%',
+                textAlign: TextAlign.right,
+                style: AppTypography.monoMedium.copyWith(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
@@ -442,5 +399,66 @@ class _GestureResultDisplayState extends State<GestureResultDisplay>
         ),
       );
     }).toList();
+  }
+}
+
+class _StateCard extends StatelessWidget {
+  final Color color;
+  final Color borderColor;
+  final Widget child;
+
+  const _StateCard({
+    required this.color,
+    required this.borderColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _WarningChip extends StatelessWidget {
+  final String message;
+  const _WarningChip({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.warningLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning.withValues(alpha:0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded,
+              size: 15, color: AppColors.warning),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                color: AppColors.warning,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

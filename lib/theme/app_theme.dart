@@ -2,49 +2,60 @@ import 'package:flutter/material.dart';
 
 /// FSL-Appropriate Color Palette with high contrast and accessibility
 class AppColors {
-  // Primary - Vibrant Green (Educational, Energy, Growth)
+  // Primary - Teal (Educational, Growth)
   static const Color primary = Color(0xFF1ABC9C);
-  static const Color primaryDark = Color(0xFF16A085);
-  static const Color primaryLight = Color(0xFF48F0E6);
+  static const Color primaryDark = Color(0xFF0E8C72);
+  static const Color primaryLight = Color(0xFFB2EFE5);
 
-  // Secondary - Warm Orange (Encouragement, Innovation)
-  static const Color secondary = Color(0xFFE67E22);
-  static const Color secondaryLight = Color(0xFFF5A623);
+  // Secondary - Indigo (AI / Intelligence features)
+  static const Color secondary = Color(0xFF5C6BC0);
+  static const Color secondaryLight = Color(0xFFE8EAF6);
+
+  // Confidence semantic colors
+  static const Color confidenceHigh = Color(0xFF2ECC71);   // ≥ 70%
+  static const Color confidenceMedium = Color(0xFFF59E0B); // 40–69%
+  static const Color confidenceLow = Color(0xFFEF4444);    // < 40%
 
   // Success/Validation - Clear Green
   static const Color success = Color(0xFF2ECC71);
-  static const Color successLight = Color(0xFF58D68D);
+  static const Color successLight = Color(0xFFDCFCE7);
 
   // Error/Alert - High Contrast Red
-  static const Color error = Color(0xFFE74C3C);
-  static const Color errorLight = Color(0xFFF8615C);
+  static const Color error = Color(0xFFEF4444);
+  static const Color errorLight = Color(0xFFFEE2E2);
 
   // Warning - Amber
-  static const Color warning = Color(0xFFF39C12);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningLight = Color(0xFFFEF3C7);
 
-  // Neutral - High Contrast Background
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF1A1A1A);
-  static const Color surface = Color(0xFFF5F6F7);
+  // Neutral - Warm White backgrounds
+  static const Color background = Color(0xFFFAFAFA);
+  static const Color surfaceDark = Color(0xFF1E293B);
+  static const Color surface = Color(0xFFF1F5F9);
+  static const Color surfaceCard = Color(0xFFFFFFFF);
 
-  // Text - High Contrast
-  static const Color textPrimary = Color(0xFF2C3E50);
-  static const Color textSecondary = Color(0xFF7F8C8D);
-  static const Color textLight = Color(0xFFECF0F1);
+  // Text - Slate scale (high contrast)
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textLight = Color(0xFFF8FAFC);
+  static const Color textHint = Color(0xFF94A3B8);
 
   // Borders
-  static const Color borderLight = Color(0xFFE8E8E8);
-  static const Color borderDark = Color(0xFFDDDDDD);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderDark = Color(0xFFCBD5E1);
 
   // Disabled
-  static const Color disabled = Color(0xFFBDC3C7);
+  static const Color disabled = Color(0xFFCBD5E1);
+
+  // Gradient stops for stats card
+  static const Color gradientStart = Color(0xFF1ABC9C);
+  static const Color gradientEnd = Color(0xFF0E8C72);
 }
 
-/// App Typography with accessibility focus
+/// App Typography — all Inter, consistent scale
 class AppTypography {
-  // Display styles
   static TextStyle displayLarge(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 32,
         fontWeight: FontWeight.bold,
         height: 1.2,
@@ -53,16 +64,16 @@ class AppTypography {
       );
 
   static TextStyle displayMedium(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 28,
         fontWeight: FontWeight.bold,
         height: 1.3,
+        letterSpacing: -0.3,
         color: AppColors.textPrimary,
       );
 
-  // Headline styles
   static TextStyle headlineLarge(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 24,
         fontWeight: FontWeight.bold,
         height: 1.3,
@@ -70,7 +81,7 @@ class AppTypography {
       );
 
   static TextStyle headlineMedium(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         height: 1.4,
@@ -78,16 +89,15 @@ class AppTypography {
       );
 
   static TextStyle headlineSmall(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 18,
         fontWeight: FontWeight.w600,
         height: 1.4,
         color: AppColors.textPrimary,
       );
 
-  // Title styles
   static TextStyle titleLarge(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 18,
         fontWeight: FontWeight.bold,
         height: 1.4,
@@ -95,16 +105,15 @@ class AppTypography {
       );
 
   static TextStyle titleMedium(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         height: 1.4,
         color: AppColors.textPrimary,
       );
 
-  // Body styles (primary content)
   static TextStyle bodyLarge(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
@@ -112,7 +121,7 @@ class AppTypography {
       );
 
   static TextStyle bodyMedium(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.5,
@@ -120,16 +129,15 @@ class AppTypography {
       );
 
   static TextStyle bodySmall(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.w400,
         height: 1.5,
         color: AppColors.textSecondary,
       );
 
-  // Label styles
   static TextStyle labelLarge(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.4,
@@ -138,7 +146,7 @@ class AppTypography {
       );
 
   static TextStyle labelMedium(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.4,
@@ -147,13 +155,22 @@ class AppTypography {
       );
 
   static TextStyle labelSmall(BuildContext context) => const TextStyle(
-        fontFamily: 'system',
+        fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w500,
         height: 1.3,
-        letterSpacing: 0.1,
+        letterSpacing: 0.5,
         color: AppColors.textSecondary,
       );
+
+  /// Monospace — for confidence percentages and numeric precision displays
+  static const TextStyle monoMedium = TextStyle(
+    fontFamily: 'RobotoMono',
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    color: AppColors.textPrimary,
+  );
 }
 
 class AppTheme {
@@ -175,19 +192,21 @@ class AppTheme {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         iconTheme: IconThemeData(color: AppColors.textPrimary, size: 24),
         titleTextStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.background,
-        elevation: 2,
+        color: AppColors.surfaceCard,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.borderLight, width: 1),
         ),
       ),
